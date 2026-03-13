@@ -15,7 +15,11 @@ export default function Schedule() {
 
   const items = [];
   (events || []).forEach(e => items.push({ id: "e-" + e.id, type: "event", date: e.date, time: e.start_time || e.shift, eventType: e.event_type, userName: e.user_name, userColor: e.user_color, description: e.description, shift: e.shift, project: e.project, completed: e.completed }));
-  (serviceCalls || []).forEach(sc => { if (sc.scheduled_date) items.push({ id: "sc-" + sc.id, type: "sc", date: sc.scheduled_date, time: sc.scheduled_time, priority: sc.priority, status: sc.status, userName: sc.assigned_name, userColor: sc.assigned_color, description: sc.description, address: sc.address || sc.project_address, clientName: sc.client_name }); });
+  (serviceCalls || []).forEach(sc => {
+    if (sc.scheduled_date) {
+      items.push({ id: "sc-" + sc.id, type: "sc", date: sc.scheduled_date, time: sc.scheduled_time, priority: sc.priority, status: sc.status, userName: sc.assigned_name, userColor: sc.assigned_color, description: sc.description, address: sc.address || sc.project_address, clientName: sc.client_name });
+    }
+  });
 
   const gr = {};
   items.forEach(i => { if (!gr[i.date]) gr[i.date] = []; gr[i.date].push(i); });
@@ -34,7 +38,6 @@ export default function Schedule() {
   for (let i = 1; i <= rem; i++) { const d = new Date(y, m + 1, i); cells.push({ dt: d.toISOString().split("T")[0], day: i, cur: false }); }
 
   const ec = (it) => it.type === "sc" ? { bg: "bg-orange-900/40", tx: "text-orange-300", bl: "border-l-orange-500" } : it.eventType === "meeting" ? { bg: "bg-purple-900/40", tx: "text-purple-300", bl: "border-l-purple-500" } : { bg: "bg-blue-900/40", tx: "text-blue-300", bl: "border-l-blue-500" };
-
   const listDates = Object.keys(gr).sort();
 
   return (
@@ -71,7 +74,7 @@ export default function Schedule() {
                       const cl = ec(it);
                       return <button key={it.id} onClick={() => setSel(it)} className={cn("w-full text-left text-[10px] px-1.5 py-0.5 rounded border-l-2 truncate hover:opacity-80", cl.bg, cl.tx, cl.bl)}>
                         {it.time && <span className="font-semibold">{String(it.time).replace(/ /g, "")} </span>}
-                        {it.type === "sc" ? it.description?.substring(0, 25) : (it.userName?.split(" ")[0] + " - " + (it.description || it.shift || "")).substring(0, 30)}
+                        {it.type === "sc" ? (it.clientName || it.description?.substring(0, 25)) : (it.userName?.split(" ")[0] + " - " + (it.description || it.shift || "")).substring(0, 30)}
                       </button>;
                     })}
                     {di.length > 4 && <p className="text-[9px] text-zinc-600 px-1">+{di.length - 4} more</p>}
@@ -95,14 +98,13 @@ export default function Schedule() {
                     {it.type === "sc" ? <div>
                       <div className="flex gap-2 mb-1"><Badge variant="urgent">Service Call</Badge><Badge variant={it.priority}>{it.priority}</Badge></div>
                       <p className="text-sm text-zinc-200">{it.description}</p>
-                      <p className="text-xs text-zinc-500 mt-1">{it.userName || "Unassigned"} {it.time && "· " + it.time} {it.address && "· " + it.address}</p>
+                      <p className="text-xs text-zinc-500 mt-1">{it.userName || "Unassigned"} {it.time && ". " + it.time} {it.address && ". " + it.address}</p>
                     </div> : <div className="flex items-center gap-2.5">
                       <Avatar name={it.userName} color={it.userColor} size="sm" />
                       <div>
                         <div className="flex items-center gap-2"><span className="text-sm font-medium text-zinc-100">{it.userName}</span><Badge variant={it.eventType === "install" ? "in-progress" : "scheduled"}>{it.eventType}</Badge></div>
                         <p className="text-xs text-zinc-500 mt-0.5">{it.shift || it.time}</p>
                         {it.description && <p className="text-xs text-zinc-500">{it.description}</p>}
-                        {it.project && <p className="text-xs text-zinc-600">{it.project.address}</p>}
                       </div>
                     </div>}
                   </Card>
