@@ -16,6 +16,7 @@ import Activity from './pages/Activity';
 import ServiceCalls from './pages/ServiceCalls';
 import Expenses from './pages/Expenses';
 import Support from './pages/Support';
+import AdminPanel from './pages/AdminPanel';
 
 const P = ({ children }) => getUser() ? children : <Navigate to="/login" replace />;
 
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="team" element={<Team />} />
         <Route path="ask" element={<AskAI />} />
         <Route path="activity" element={<Activity />} />
+        <Route path="admin" element={<AdminPanel />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
