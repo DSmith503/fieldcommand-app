@@ -15,6 +15,7 @@ import AskAI from './pages/AskAI';
 import Activity from './pages/Activity';
 import ServiceCalls from './pages/ServiceCalls';
 import Expenses from './pages/Expenses';
+import Support from './pages/Support';
 
 const P = ({ children }) => getUser() ? children : <Navigate to="/login" replace />;
 
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="change-orders" element={<ChangeOrders />} />
         <Route path="service-calls" element={<ServiceCalls />} />
         <Route path="messages" element={<Messages />} />
+        <Route path="support" element={<Support />} />
         <Route path="clients" element={<Clients />} />
         <Route path="team" element={<Team />} />
         <Route path="ask" element={<AskAI />} />
