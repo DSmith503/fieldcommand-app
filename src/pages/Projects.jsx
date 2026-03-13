@@ -3,7 +3,7 @@ import { useApi } from "../hooks/useApi";
 import { api, isAdmin, cn } from "../utils/api";
 import { Card, Badge, Avatar, Spinner, PageHeader, Button, Modal, Input, Textarea, Select, EmptyState } from "../components/UI";
 import { useNavigate } from "react-router-dom";
-import { FolderKanban, Plus, Upload, X, ChevronDown, ChevronUp } from "lucide-react";
+import { FolderKanban, Plus, Upload, X, ChevronDown, ChevronUp, Wrench } from "lucide-react";
 
 export default function Projects() {
   const { data: projects, loading, reload } = useApi("/projects");
@@ -19,11 +19,14 @@ export default function Projects() {
     <div>
       <PageHeader title="Projects" subtitle={(projects?.length || 0) + " total"}
         action={isAdmin() && (
-          <div className="flex gap-2">
-            <Button onClick={() => { setMode("manual"); setShowNew(true); }} className="flex items-center gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={() => { setMode("manual"); setShowNew(true); }}>
               <Plus className="w-4 h-4" /> New Project
             </Button>
-            <Button variant="secondary" onClick={() => { setMode("pdf"); setShowPdf(true); }} className="flex items-center gap-2">
+            <Button variant="secondary" onClick={() => nav("/service-calls")}>
+              <Wrench className="w-4 h-4" /> New Service Call
+            </Button>
+            <Button variant="secondary" onClick={() => { setMode("pdf"); setShowPdf(true); }}>
               <Upload className="w-4 h-4" /> From PDF
             </Button>
           </div>
