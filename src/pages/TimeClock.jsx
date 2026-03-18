@@ -8,7 +8,7 @@ export default function TimeClock() {
   const me = getUser();
   const admin = isAdmin();
   const toast = useToast();
-  const { data: dayClock, loading: dcLoad, reload: rDC } = useApi('/time/day-clock');
+  const { data: dayStatus, loading: dcLoad, reload: rDC } = useApi('/time/day-status');
   const { data: myEntries, loading: eLoad, reload: rEntries } = useApi('/time/entries');
   const { data: projects } = useApi('/projects');
   const { data: serviceCalls } = useApi('/service-calls');
@@ -22,9 +22,9 @@ export default function TimeClock() {
   const [adminFilters, setAdminFilters] = useState({ user_id: '', start_date: '', end_date: '' });
   const [activeDayClocks, setActiveDayClocks] = useState([]);
 
-  const isClockedIn = dayClock && !dayClock.clock_out;
+  const isClockedIn = dayStatus?.clocked_in;
+  const clockEntry = dayStatus?.entry;
 
-  // Admin: load all users' entries
   useEffect(() => {
     if (admin && tab === 'team') {
       setAdminLoading(true);
@@ -46,10 +46,10 @@ export default function TimeClock() {
     setBusy(true);
     try {
       if (isClockedIn) {
-        await api('/time/day-clock/out', { method: 'POST' });
+        await api('/time/day-clock-out', { method: 'POST' });
         toast('Clocked out!');
       } else {
-        await api('/time/day-clock/in', { method: 'POST' });
+        await api('/time/day-clock-in', { method: 'POST' });
         toast('Clocked in!');
       }
       rDC();
@@ -69,7 +69,6 @@ export default function TimeClock() {
     setBusy(false);
   }
 
-  // Calculate hours from start/end
   function calcHours(start, end) {
     if (!start || !end) return 0;
     const [sh, sm] = start.split(':').map(Number);
@@ -81,7 +80,6 @@ export default function TimeClock() {
 
   const entries = myEntries || [];
   const totalHours = entries.reduce((s, e) => s + Number(e.hours || 0), 0);
-
   const tabs = [{ id: 'clock', label: 'My Time' }];
   if (admin) tabs.push({ id: 'team', label: 'Team Hours' });
 
@@ -89,11 +87,9 @@ export default function TimeClock() {
     <div>
       <PageHeader title="Time Clock" subtitle={admin ? 'Track time and view team hours' : 'Track your work hours'}
         action={<Button onClick={() => setShowManual(true)}><Plus className="w-4 h-4" /> Manual Entry</Button>} />
-
       {admin && <Tabs items={tabs} active={tab} onChange={setTab} />}
 
       {tab === 'clock' && <>
-        {/* Day Clock Card */}
         <Card className="p-6 mb-6 text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", isClockedIn ? "bg-emerald-500/20" : "bg-zinc-800")}>
@@ -101,7 +97,7 @@ export default function TimeClock() {
             </div>
             <div className="text-left">
               <p className="text-lg font-bold">{isClockedIn ? 'Clocked In' : 'Clocked Out'}</p>
-              {isClockedIn && dayClock?.clock_in && <p className="text-xs text-emerald-400 font-mono">Since {new Date(dayClock.clock_in).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</p>}
+              {isClockedIn && clockEntry?.clock_in && <p className="text-xs text-emerald-400 font-mono">Since {new Date(clockEntry.clock_in).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</p>}
             </div>
           </div>
           <button onClick={toggleDayClock} disabled={busy} className={cn("px-8 py-3 rounded-2xl text-base font-semibold transition-all flex items-center gap-2 mx-auto", isClockedIn ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" : "bg-gradient-to-br from-brand-400 to-[#D4AF37] text-white shadow-lg shadow-brand-400/20")}>
@@ -109,7 +105,6 @@ export default function TimeClock() {
           </button>
         </Card>
 
-        {/* My Entries */}
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-semibold text-zinc-400">My Time Entries</p>
           <p className="text-sm font-bold font-mono text-brand-400">{totalHours.toFixed(1)}h total</p>
@@ -137,9 +132,7 @@ export default function TimeClock() {
         ))}
       </>}
 
-      {/* Admin Team View */}
       {tab === 'team' && admin && <>
-        {/* Active Clocks */}
         {activeDayClocks.length > 0 && <Card className="p-4 mb-4">
           <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">Currently Clocked In</p>
           <div className="flex flex-wrap gap-3">
@@ -150,7 +143,6 @@ export default function TimeClock() {
           </div>
         </Card>}
 
-        {/* Filters */}
         <div className="grid grid-cols-3 gap-3 mb-4">
           <Select label="Employee" value={adminFilters.user_id} onChange={e => setAdminFilters({ ...adminFilters, user_id: e.target.value })}>
             <option value="">All</option>
@@ -160,7 +152,6 @@ export default function TimeClock() {
           <Input label="To" type="date" value={adminFilters.end_date} onChange={e => setAdminFilters({ ...adminFilters, end_date: e.target.value })} />
         </div>
 
-        {/* Summary by User */}
         {!adminLoading && adminEntries.length > 0 && (() => {
           const byUser = {};
           adminEntries.forEach(e => {
@@ -180,7 +171,6 @@ export default function TimeClock() {
           </div>;
         })()}
 
-        {/* All Entries */}
         {adminLoading ? <Spinner /> : adminEntries.length === 0 ? <EmptyState icon={Users} title="No entries" sub="Adjust filters or wait for team to log time" /> :
         adminEntries.slice(0, 50).map(e => (
           <Card key={e.id} className="p-4 mb-1.5">
@@ -197,7 +187,6 @@ export default function TimeClock() {
                   {e.end_time && ' → ' + new Date(e.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                 </p>
                 {e.project_address && <p className="text-xs text-blue-400">{e.project_address}</p>}
-                {e.service_call_description && <p className="text-xs text-orange-400">{e.service_call_description}</p>}
                 {e.notes && <p className="text-xs text-zinc-600">{e.notes}</p>}
               </div>
               <div className="text-right flex-shrink-0">
@@ -209,7 +198,6 @@ export default function TimeClock() {
         ))}
       </>}
 
-      {/* Manual Entry Modal */}
       <Modal open={showManual} onClose={() => setShowManual(false)} title="Manual Time Entry">
         <div className="space-y-3">
           <Input label="Date *" type="date" value={manual.date} onChange={e => setManual({ ...manual, date: e.target.value })} />
@@ -224,7 +212,7 @@ export default function TimeClock() {
           </Select>
           <Select label="Service Call" value={manual.service_call_id} onChange={e => setManual({ ...manual, service_call_id: e.target.value, project_id: '' })}>
             <option value="">None</option>
-            {(serviceCalls || []).map(sc => <option key={sc.id} value={sc.id}>{sc.description?.substring(0, 50)}</option>)}
+            {(serviceCalls || []).map(sc => <option key={sc.id} value={sc.id}>{(sc.description || '').substring(0, 50)}</option>)}
           </Select>
           <Textarea label="Notes" rows={2} value={manual.notes} onChange={e => setManual({ ...manual, notes: e.target.value })} placeholder="What did you work on?" />
           <p className="text-[10px] text-amber-400 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> This entry will be flagged as manually entered</p>
