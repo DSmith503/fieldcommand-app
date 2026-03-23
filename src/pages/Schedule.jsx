@@ -92,11 +92,11 @@ export default function Schedule() {
       </div>
     </div>
 
-    {view === "month" && <div className="border border-zinc-800/50 rounded-xl overflow-hidden">
+    {view === "month" && <div className="border border-zinc-800/50 rounded-xl overflow-hidden bg-[#0a0a0c]">
       <div className="grid grid-cols-7 border-b border-zinc-800/50">{["SUN","MON","TUE","WED","THU","FRI","SAT"].map(d => <div key={d} className="text-[10px] font-semibold text-zinc-500 text-center py-2 bg-zinc-900/30">{d}</div>)}</div>
       <div className="grid grid-cols-7">{cells.map((c, i) => {
         const di = gr[c.dt] || []; const isT = c.dt === todayStr;
-        return <div key={i} className={cn("min-h-[100px] border-b border-r border-zinc-800/30 p-1", !c.cur && "bg-zinc-950/50", isT && "bg-brand-400/5")}>
+        return <div key={i} className={cn("min-h-[100px] border-b border-r border-zinc-800/30 p-1 bg-[#0a0a0c]", !c.cur && "bg-[#070709]", isT && "bg-brand-400/5")}>
           <div className="flex justify-between items-center px-1 mb-0.5"><span className={cn("text-xs font-medium", isT ? "text-brand-400 font-bold" : c.cur ? "text-zinc-400" : "text-zinc-700")}>{c.day}</span>{di.length > 0 && <span className="text-[9px] text-zinc-600">{di.length}</span>}</div>
           <div className="space-y-0.5">{di.slice(0, 4).map(it => { const cl = ec(it); return <button key={it._id} onClick={() => openItem(it)} className={cn("w-full text-left text-[10px] px-1.5 py-0.5 rounded border-l-2 truncate hover:opacity-80", cl.bg, cl.tx, cl.bl)}>{it.time && <span className="font-semibold">{String(it.time).replace(/ /g, "")} </span>}{it.type === "sc" ? (it.description || "").substring(0, 25) : ((it.userName ? it.userName.split(" ")[0] : "") + (it.attendees?.length ? " +" + it.attendees.length : "") + " - " + (it.description || it.shift || "")).substring(0, 30)}</button>; })}
             {di.length > 4 && <p className="text-[9px] text-zinc-600 px-1">+{di.length - 4} more</p>}
