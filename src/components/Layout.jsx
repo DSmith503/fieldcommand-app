@@ -31,7 +31,7 @@ export default function Layout() {
   const ini = user?.name?.split(' ').map(w => w[0]).join('') || '?';
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex">
+    <div className="min-h-screen bg-transparent flex">
       <aside className="hidden lg:flex flex-col w-56 bg-white/[0.02] border-r border-white/[0.04] fixed inset-y-0 left-0 z-40 backdrop-blur-xl">
         <div className="p-5 flex items-center gap-3">
           <img src={LOGO} alt="Elite" className="h-8 object-contain" onError={e => e.target.style.display='none'} />
