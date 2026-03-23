@@ -3,3 +3,111 @@
 @tailwind utilities;
 * { scrollbar-width: thin; scrollbar-color: #3f3f46 transparent; }
 @layer base { body { font-family: 'DM Sans', system-ui, sans-serif; } }
+
+/* ─── Futuristic Tech Background ─── */
+body {
+  background: #09090b;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(203, 161, 53, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 0% 50%, rgba(59, 130, 246, 0.04), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 80%, rgba(139, 92, 246, 0.04), transparent);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(203, 161, 53, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(203, 161, 53, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 70%);
+  animation: gridPulse 8s ease-in-out infinite;
+}
+
+@keyframes gridPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* Floating orbs */
+#root::before,
+#root::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: -1;
+  pointer-events: none;
+  animation: float 20s ease-in-out infinite;
+}
+
+#root::before {
+  width: 400px;
+  height: 400px;
+  top: -100px;
+  right: -100px;
+  background: radial-gradient(circle, rgba(203, 161, 53, 0.06), transparent 70%);
+  animation-duration: 25s;
+}
+
+#root::after {
+  width: 300px;
+  height: 300px;
+  bottom: -50px;
+  left: -50px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.05), transparent 70%);
+  animation-duration: 20s;
+  animation-delay: -10s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(30px, -20px) scale(1.05); }
+  50% { transform: translate(-20px, 30px) scale(0.95); }
+  75% { transform: translate(15px, 15px) scale(1.02); }
+}
+
+/* Subtle scan line effect */
+@keyframes scanline {
+  0% { transform: translateY(-100vh); }
+  100% { transform: translateY(100vh); }
+}
+
+/* ─── Glass card enhancement ─── */
+.backdrop-blur-xl {
+  backdrop-filter: blur(40px) saturate(1.4);
+  -webkit-backdrop-filter: blur(40px) saturate(1.4);
+}
+
+/* ─── Glow effects on interactive elements ─── */
+a:hover, button:hover {
+  text-shadow: 0 0 20px rgba(203, 161, 53, 0.1);
+}
+
+/* ─── Smooth page transitions ─── */
+main > div > div {
+  animation: pageIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Selection color ─── */
+::selection {
+  background: rgba(203, 161, 53, 0.3);
+  color: #fff;
+}
