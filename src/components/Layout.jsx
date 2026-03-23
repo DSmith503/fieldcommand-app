@@ -2,7 +2,6 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { getUser, clearAuth, isAdmin, cn } from '../utils/api';
 import { LayoutDashboard, FolderKanban, Calendar, Clock, FileText, MessageSquare, Users, Sparkles, LogOut, Menu, X, Wrench, Receipt, Phone, Settings } from 'lucide-react';
 import { useState } from 'react';
-import CircuitBG from './CircuitBG';
 
 const LOGO = "https://img1.wsimg.com/isteam/ip/514739c3-e1e5-4fa0-81a4-9f7a09e701a3/logo/6f3c0d46-f2e3-4700-8e26-bb72bad64f34.png";
 
@@ -23,6 +22,25 @@ const ADMIN_NAV = [
   { to: '/admin', icon: Settings, label: 'Admin Panel' },
 ];
 
+function VideoBG() {
+  return <>
+    <video
+      autoPlay muted loop playsInline
+      style={{
+        position: 'fixed', inset: 0, width: '100%', height: '100%',
+        objectFit: 'cover', zIndex: 0, pointerEvents: 'none',
+        opacity: 0.4,
+      }}
+    >
+      <source src="/bg-video.mp4" type="video/mp4" />
+    </video>
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+      background: 'linear-gradient(180deg, rgba(3,3,5,0.6) 0%, rgba(3,3,5,0.3) 40%, rgba(3,3,5,0.6) 100%)',
+    }} />
+  </>;
+}
+
 export default function Layout() {
   const user = getUser();
   const nav = useNavigate();
@@ -33,7 +51,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex relative" style={{ background: '#030305' }}>
-      <CircuitBG />
+      <VideoBG />
       <aside className="hidden lg:flex flex-col w-56 border-r border-white/[0.06] fixed inset-y-0 left-0 z-40" style={{ background: 'rgba(3,3,5,0.88)', backdropFilter: 'blur(40px) saturate(1.6)', WebkitBackdropFilter: 'blur(40px) saturate(1.6)' }}>
         <div className="p-5 flex items-center gap-3">
           <img src={LOGO} alt="Elite" className="h-8 object-contain" onError={e => e.target.style.display = 'none'} />
