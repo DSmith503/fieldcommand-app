@@ -1,5 +1,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { getUser, clearAuth, isAdmin, cn } from '../utils/api';
+import { useApi } from '../hooks/useApi';
+import { useGPSTracker } from '../hooks/useGPSTracker';
 import { LayoutDashboard, FolderKanban, Calendar, Clock, FileText, MessageSquare, Users, Sparkles, LogOut, Menu, X, Wrench, Receipt, Phone, Settings } from 'lucide-react';
 import { useState } from 'react';
 
@@ -24,20 +26,10 @@ const ADMIN_NAV = [
 
 function VideoBG() {
   return <>
-    <video
-      autoPlay muted loop playsInline
-      style={{
-        position: 'fixed', inset: 0, width: '100%', height: '100%',
-        objectFit: 'cover', zIndex: 0, pointerEvents: 'none',
-        opacity: 0.4,
-      }}
-    >
+    <video autoPlay muted loop playsInline style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0, pointerEvents: 'none', opacity: 0.4 }}>
       <source src="/bg-video.mp4" type="video/mp4" />
     </video>
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
-      background: 'linear-gradient(180deg, rgba(3,3,5,0.6) 0%, rgba(3,3,5,0.3) 40%, rgba(3,3,5,0.6) 100%)',
-    }} />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(3,3,5,0.6) 0%, rgba(3,3,5,0.3) 40%, rgba(3,3,5,0.6) 100%)' }} />
   </>;
 }
 
@@ -48,6 +40,10 @@ export default function Layout() {
   const links = isAdmin() ? [...NAV, ...ADMIN_NAV] : NAV;
   const logout = () => { clearAuth(); nav('/login'); };
   const ini = user?.name?.split(' ').map(w => w[0]).join('') || '?';
+
+  // GPS tracking - shares location when clocked in
+  const { data: dayStatus } = useApi('/time/day-status');
+  useGPSTracker(dayStatus?.clocked_in);
 
   return (
     <div className="min-h-screen flex relative" style={{ background: '#030305' }}>
