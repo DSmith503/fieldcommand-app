@@ -179,27 +179,85 @@ export default function ProjectDetail() {
         {id:'cos', label:'Change Orders'}, {id:'service', label:'Service Calls'},
       ]} active={tab} onChange={setTab} />
 
-      {/* TASKS with photo upload */}
-      {tab === 'tasks' && <div>
-        {isAdmin() && <div className="flex justify-end mb-3"><Button variant="secondary" onClick={() => setShowAddArea(true)}><Plus className="w-4 h-4" /> Add Area</Button></div>}
-        {(project.areas || []).map(area => <div key={area.id} className="mb-6"><h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 px-1">{area.name}</h3><div className="space-y-1">{(area.tasks || []).map(task => (
-          <div key={task.id} className={cn('rounded-xl text-sm bg-[#0a0a0c] border border-white/[0.04]', task.done && 'opacity-70')}>
-            <button onClick={() => toggleTask(task.id)} disabled={toggling === task.id} className={cn('w-full text-left flex items-center gap-3 px-4 py-2.5', task.done ? 'text-zinc-600 line-through' : 'text-zinc-200')}>
-              <div className={cn('w-5 h-5 rounded-md border flex-shrink-0 flex items-center justify-center', task.done ? 'bg-emerald-600 border-emerald-600' : 'border-zinc-600')}>{task.done && <Check className="w-3 h-3 text-white" />}</div>
-              <span className="flex-1">{task.text}</span>
-              {task.assignee_name && <Avatar name={task.assignee_name} color={task.assignee_color} size="sm" />}
-              {task.due_date && <span className="text-xs text-zinc-600">{fmtDate(task.due_date)}</span>}
-            </button>
-            <div className="px-4 pb-2 flex items-center gap-3 flex-wrap">
-              {task.done && task.completed_by_name && <span className="text-[11px] text-zinc-600">Completed by {task.completed_by_name}{task.completed_at && ' · ' + new Date(task.completed_at).toLocaleString()}{isAdmin() && <button onClick={() => setShowReassign(task)} className="ml-1 text-brand-400 hover:underline">change</button>}</span>}
-              {isAdmin() && !task.done && <button onClick={() => setShowAssign(task)} className="text-[11px] text-zinc-600 hover:text-brand-400">{task.assignee_name ? 'Reassign' : 'Assign'}</button>}
-              <button onClick={() => { setShowPhotoUpload(task.id); loadTaskPhotos(task.id); }} className="text-[11px] text-zinc-600 hover:text-brand-400 flex items-center gap-1"><Camera className="w-3 h-3" /> Photo</button>
-              {taskPhotos[task.id]?.length > 0 && <span className="text-[11px] text-emerald-500 flex items-center gap-1"><Image className="w-3 h-3" /> {taskPhotos[task.id].length}</span>}
-            </div>
+      {/* TASKS with photo upload + tech panel */}
+      {tab === 'tasks' && (() => {
+        // Build tech assignment summary
+        const allTasks = (project.areas || []).flatMap(a => (a.tasks || []).map(t => ({ ...t, area: a.name })));
+        const techMap = {};
+        allTasks.forEach(t => {
+          if (t.assignee_name) {
+            if (!techMap[t.assignee_name]) techMap[t.assignee_name] = { color: t.assignee_color, tasks: [], done: 0 };
+            techMap[t.assignee_name].tasks.push(t);
+            if (t.done) techMap[t.assignee_name].done++;
+          }
+        });
+        const unassignedTasks = allTasks.filter(t => !t.assignee_name);
+
+        return <div className="flex gap-4">
+          {/* Left: Task List */}
+          <div className="flex-1 min-w-0">
+            {isAdmin() && <div className="flex justify-end mb-3"><Button variant="secondary" onClick={() => setShowAddArea(true)}><Plus className="w-4 h-4" /> Add Area</Button></div>}
+            {(project.areas || []).map(area => <div key={area.id} className="mb-6"><h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 px-1">{area.name}</h3><div className="space-y-1">{(area.tasks || []).map(task => (
+              <div key={task.id} className={cn('rounded-xl text-sm bg-[#0a0a0c] border border-white/[0.04]', task.done && 'opacity-70')}>
+                <button onClick={() => toggleTask(task.id)} disabled={toggling === task.id} className={cn('w-full text-left flex items-center gap-3 px-4 py-2.5', task.done ? 'text-zinc-600 line-through' : 'text-zinc-200')}>
+                  <div className={cn('w-5 h-5 rounded-md border flex-shrink-0 flex items-center justify-center', task.done ? 'bg-emerald-600 border-emerald-600' : 'border-zinc-600')}>{task.done && <Check className="w-3 h-3 text-white" />}</div>
+                  <span className="flex-1">{task.text}</span>
+                  {task.assignee_name && <button onClick={e => { e.stopPropagation(); if (isAdmin()) assignTask(task.id, null); }} title={isAdmin() ? "Click to unassign" : task.assignee_name} className={isAdmin() ? "hover:opacity-60" : ""}><Avatar name={task.assignee_name} color={task.assignee_color} size="sm" /></button>}
+                  {task.due_date && <span className="text-xs text-zinc-600">{fmtDate(task.due_date)}</span>}
+                </button>
+                <div className="px-4 pb-2 flex items-center gap-3 flex-wrap">
+                  {task.done && task.completed_by_name && <span className="text-[11px] text-zinc-600">Completed by {task.completed_by_name}{task.completed_at && ' · ' + new Date(task.completed_at).toLocaleString()}{isAdmin() && <button onClick={() => setShowReassign(task)} className="ml-1 text-brand-400 hover:underline">change</button>}</span>}
+                  {isAdmin() && !task.done && <button onClick={() => setShowAssign(task)} className="text-[11px] text-zinc-600 hover:text-brand-400">{task.assignee_name ? 'Reassign' : 'Assign'}</button>}
+                  <button onClick={() => { setShowPhotoUpload(task.id); loadTaskPhotos(task.id); }} className="text-[11px] text-zinc-600 hover:text-brand-400 flex items-center gap-1"><Camera className="w-3 h-3" /> Photo</button>
+                  {taskPhotos[task.id]?.length > 0 && <span className="text-[11px] text-emerald-500 flex items-center gap-1"><Image className="w-3 h-3" /> {taskPhotos[task.id].length}</span>}
+                </div>
+              </div>
+            ))}</div></div>)}
+            {!project.areas?.length && <EmptyState title="No areas or tasks yet" />}
           </div>
-        ))}</div></div>)}
-        {!project.areas?.length && <EmptyState title="No areas or tasks yet" />}
-      </div>}
+
+          {/* Right: Tech Assignment Panel */}
+          <div className="w-72 flex-shrink-0 hidden lg:block">
+            <Card className="p-4 sticky top-4">
+              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Team Assignments</h3>
+              {Object.keys(techMap).length === 0 && unassignedTasks.length === allTasks.length && <p className="text-xs text-zinc-600">No techs assigned yet</p>}
+              {Object.entries(techMap).map(([name, data]) => (
+                <div key={name} className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Avatar name={name} color={data.color} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{name}</p>
+                      <p className="text-[10px] text-zinc-500">{data.done}/{data.tasks.length} done</p>
+                    </div>
+                    <div className="w-8 h-8 rounded-lg bg-white/[0.04] flex items-center justify-center text-xs font-bold font-mono text-brand-400">{data.tasks.length}</div>
+                  </div>
+                  <div className="space-y-0.5 pl-8">
+                    {data.tasks.map(t => (
+                      <div key={t.id} className={cn("text-[11px] flex items-center gap-1.5 py-0.5", t.done ? "text-zinc-600 line-through" : "text-zinc-400")}>
+                        <div className={cn("w-2.5 h-2.5 rounded-sm flex-shrink-0", t.done ? "bg-emerald-600" : "border border-zinc-600")} />
+                        <span className="truncate">{t.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {unassignedTasks.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                  <p className="text-[10px] text-amber-400 font-semibold uppercase tracking-wider mb-2">Unassigned ({unassignedTasks.length})</p>
+                  <div className="space-y-0.5">
+                    {unassignedTasks.map(t => (
+                      <div key={t.id} className="text-[11px] text-zinc-500 flex items-center gap-1.5 py-0.5">
+                        <div className="w-2.5 h-2.5 rounded-sm border border-zinc-700 flex-shrink-0" />
+                        <span className="truncate">{t.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+          </div>
+        </div>;
+      })()}
 
       {/* SCHEDULE TAB */}
       {tab === 'schedule' && <div>
