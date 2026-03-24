@@ -255,8 +255,9 @@ export default function ProjectDetail() {
                 <div className="px-4 pb-2 flex items-center gap-3 flex-wrap">
                   {task.done && task.completed_by_name && <span className="text-[11px] text-zinc-600">Completed by {task.completed_by_name}{task.completed_at && ' · ' + new Date(task.completed_at).toLocaleString()}{isAdmin() && <button onClick={() => setShowReassign(task)} className="ml-1 text-brand-400 hover:underline">change</button>}</span>}
                   {isAdmin() && !task.done && <button onClick={() => { setShowAssign(task); loadAssignees(task.id); }} className="text-[11px] text-zinc-600 hover:text-brand-400">{task.assignee_name ? 'Edit Team' : 'Assign'}</button>}
-                  {isAdmin() && <button onClick={(e) => { e.stopPropagation(); setEditingTask(task.id); setEditTaskText(task.text); }} className="text-[11px] text-zinc-600 hover:text-brand-400 flex items-center gap-1"><Pencil className="w-3 h-3" /> Edit</button>}
+                  <button onClick={(e) => { e.stopPropagation(); setEditingTask(task.id); setEditTaskText(task.text); }} className="text-[11px] text-zinc-600 hover:text-brand-400 flex items-center gap-1"><Pencil className="w-3 h-3" /> Edit</button>
                   <button onClick={() => { setShowPhotoUpload(task.id); loadTaskPhotos(task.id); }} className="text-[11px] text-zinc-600 hover:text-brand-400 flex items-center gap-1"><Camera className="w-3 h-3" /> Photo</button>
+                  {isAdmin() && <button onClick={async () => { if (confirm('Delete this task?')) { try { await api('/projects/tasks/' + task.id, { method: 'DELETE' }); load(); } catch (e) { alert(e.message); } } }} className="text-[11px] text-zinc-600 hover:text-red-400 flex items-center gap-1"><Trash2 className="w-3 h-3" /> Delete</button>}
                   {taskPhotos[task.id]?.length > 0 && <span className="text-[11px] text-emerald-500 flex items-center gap-1"><Image className="w-3 h-3" /> {taskPhotos[task.id].length}</span>}
                 </div>
               </div>
