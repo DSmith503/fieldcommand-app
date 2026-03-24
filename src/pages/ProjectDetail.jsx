@@ -22,6 +22,7 @@ export default function ProjectDetail() {
   const [newNote, setNewNote] = useState('');
   const [showAssign, setShowAssign] = useState(null);
   const [assigneeMap, setAssigneeMap] = useState({});
+  const [showReassign, setShowReassign] = useState(null);
   const [editingTask, setEditingTask] = useState(null);
   const [editTaskText, setEditTaskText] = useState('');
   const [showSchedule, setShowSchedule] = useState(false);
