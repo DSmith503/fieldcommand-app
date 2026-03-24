@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, fmtMoney, fmtDate, isAdmin, getUser, cn } from '../utils/api';
 import { Card, Badge, Avatar, Spinner, Button, Modal, Input, Select, Textarea, Tabs, EmptyState, useToast } from '../components/UI';
-import { ArrowLeft, Check, Plus, Upload, FileText, Send, Edit, Clock, DollarSign, Trash2, Calendar, Camera, Award, Image } from 'lucide-react';
+import { ArrowLeft, Check, Plus, Upload, FileText, Send, Edit, Clock, DollarSign, Trash2, Calendar, Camera, Award, Image, Pencil } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 
 export default function ProjectDetail() {
@@ -21,6 +21,9 @@ export default function ProjectDetail() {
   const [coCost, setCOCost] = useState('');
   const [newNote, setNewNote] = useState('');
   const [showAssign, setShowAssign] = useState(null);
+  const [assigneeMap, setAssigneeMap] = useState({});
+  const [editingTask, setEditingTask] = useState(null);
+  const [editTaskText, setEditTaskText] = useState('');
   const [assigneeMap, setAssigneeMap] = useState({});
   const [showReassign, setShowReassign] = useState(null);
   const [showSchedule, setShowSchedule] = useState(false);
@@ -72,6 +75,24 @@ export default function ProjectDetail() {
   }
   async function assignTask(taskId, userId) {
     try { await api('/projects/tasks/' + taskId + '/assign', { method: 'PATCH', body: JSON.stringify({ user_id: userId }) }); setShowAssign(null); load(); } catch (e) { alert(e.message); }
+  }
+  async function editTask(taskId) {
+    if (!editTaskText.trim()) return;
+    try { await api('/projects/tasks/' + taskId + '/edit', { method: 'PATCH', body: JSON.stringify({ text: editTaskText }) }); setEditingTask(null); setEditTaskText(''); load(); } catch (e) { alert(e.message); }
+  }
+  async function toggleAssignee(taskId, userId) {
+    try {
+      const current = assigneeMap[taskId] || [];
+      const isAssigned = current.some(a => (a.id === userId) || (a.user_id === userId));
+      let result;
+      if (isAssigned) { result = await api('/task-assignees/' + taskId + '/' + userId, { method: 'DELETE' }); }
+      else { result = await api('/task-assignees/' + taskId + '/add', { method: 'POST', body: JSON.stringify({ user_id: userId }) }); }
+      setAssigneeMap(p => ({ ...p, [taskId]: result }));
+      load();
+    } catch (e) { alert(e.message); }
+  }
+  async function loadAssignees(taskId) {
+    try { const a = await api('/task-assignees/' + taskId); setAssigneeMap(p => ({ ...p, [taskId]: a })); } catch { }
   }
   async function toggleAssignee(taskId, userId) {
     try {
@@ -217,15 +238,24 @@ export default function ProjectDetail() {
             {isAdmin() && <div className="flex justify-end mb-3"><Button variant="secondary" onClick={() => setShowAddArea(true)}><Plus className="w-4 h-4" /> Add Area</Button></div>}
             {(project.areas || []).map(area => <div key={area.id} className="mb-6"><h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 px-1">{area.name}</h3><div className="space-y-1">{(area.tasks || []).map(task => (
               <div key={task.id} className={cn('rounded-xl text-sm bg-[#0a0a0c] border border-white/[0.04]', task.done && 'opacity-70')}>
-                <button onClick={() => toggleTask(task.id)} disabled={toggling === task.id} className={cn('w-full text-left flex items-center gap-3 px-4 py-2.5', task.done ? 'text-zinc-600 line-through' : 'text-zinc-200')}>
-                  <div className={cn('w-5 h-5 rounded-md border flex-shrink-0 flex items-center justify-center', task.done ? 'bg-emerald-600 border-emerald-600' : 'border-zinc-600')}>{task.done && <Check className="w-3 h-3 text-white" />}</div>
-                  <span className="flex-1">{task.text}</span>
-                  {task.assignee_name && <div onClick={e => e.stopPropagation()} className="flex -space-x-1.5">{(() => { const extras = (assigneeMap[task.id] || []).filter(a => a.name !== task.assignee_name); return [<Avatar key="primary" name={task.assignee_name} color={task.assignee_color} size="sm" />, ...extras.map(a => <Avatar key={a.id || a.user_id} name={a.name} color={a.color} size="sm" />)]; })()}</div>}
-                  {task.due_date && <span className="text-xs text-zinc-600">{fmtDate(task.due_date)}</span>}
-                </button>
+                {editingTask === task.id ? (
+                  <div className="flex items-center gap-2 px-4 py-2.5">
+                    <input value={editTaskText} onChange={e => setEditTaskText(e.target.value)} onKeyDown={e => e.key === 'Enter' && editTask(task.id)} className="flex-1 bg-white/[0.025] border border-brand-400/50 rounded-lg px-3 py-1.5 text-sm text-zinc-100 outline-none" autoFocus />
+                    <Button onClick={() => editTask(task.id)} className="text-xs py-1.5 px-3">Save</Button>
+                    <button onClick={() => { setEditingTask(null); setEditTaskText(''); }} className="text-xs text-zinc-500 hover:text-zinc-300">Cancel</button>
+                  </div>
+                ) : (
+                  <button onClick={() => toggleTask(task.id)} disabled={toggling === task.id} className={cn('w-full text-left flex items-center gap-3 px-4 py-2.5', task.done ? 'text-zinc-600 line-through' : 'text-zinc-200')}>
+                    <div className={cn('w-5 h-5 rounded-md border flex-shrink-0 flex items-center justify-center', task.done ? 'bg-emerald-600 border-emerald-600' : 'border-zinc-600')}>{task.done && <Check className="w-3 h-3 text-white" />}</div>
+                    <span className="flex-1">{task.text}</span>
+                    {task.assignee_name && <div onClick={e => e.stopPropagation()} className="flex -space-x-1.5">{(() => { const extras = (assigneeMap[task.id] || []).filter(a => a.name !== task.assignee_name); return [<Avatar key="primary" name={task.assignee_name} color={task.assignee_color} size="sm" />, ...extras.map(a => <Avatar key={a.id || a.user_id} name={a.name} color={a.color} size="sm" />)]; })()}</div>}
+                    {task.due_date && <span className="text-xs text-zinc-600">{fmtDate(task.due_date)}</span>}
+                  </button>
+                )}
                 <div className="px-4 pb-2 flex items-center gap-3 flex-wrap">
                   {task.done && task.completed_by_name && <span className="text-[11px] text-zinc-600">Completed by {task.completed_by_name}{task.completed_at && ' · ' + new Date(task.completed_at).toLocaleString()}{isAdmin() && <button onClick={() => setShowReassign(task)} className="ml-1 text-brand-400 hover:underline">change</button>}</span>}
                   {isAdmin() && !task.done && <button onClick={() => { setShowAssign(task); loadAssignees(task.id); }} className="text-[11px] text-zinc-600 hover:text-brand-400">{task.assignee_name ? 'Edit Team' : 'Assign'}</button>}
+                  {isAdmin() && <button onClick={(e) => { e.stopPropagation(); setEditingTask(task.id); setEditTaskText(task.text); }} className="text-[11px] text-zinc-600 hover:text-brand-400 flex items-center gap-1"><Pencil className="w-3 h-3" /> Edit</button>}
                   <button onClick={() => { setShowPhotoUpload(task.id); loadTaskPhotos(task.id); }} className="text-[11px] text-zinc-600 hover:text-brand-400 flex items-center gap-1"><Camera className="w-3 h-3" /> Photo</button>
                   {taskPhotos[task.id]?.length > 0 && <span className="text-[11px] text-emerald-500 flex items-center gap-1"><Image className="w-3 h-3" /> {taskPhotos[task.id].length}</span>}
                 </div>
