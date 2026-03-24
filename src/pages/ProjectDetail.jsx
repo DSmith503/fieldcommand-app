@@ -24,8 +24,6 @@ export default function ProjectDetail() {
   const [assigneeMap, setAssigneeMap] = useState({});
   const [editingTask, setEditingTask] = useState(null);
   const [editTaskText, setEditTaskText] = useState('');
-  const [assigneeMap, setAssigneeMap] = useState({});
-  const [showReassign, setShowReassign] = useState(null);
   const [showSchedule, setShowSchedule] = useState(false);
   const [schedForm, setSchedForm] = useState({ user_id: '', date: '', start_time: '', end_time: '', description: '' });
   const [schedEvents, setSchedEvents] = useState([]);
