@@ -21,6 +21,7 @@ export default function ProjectDetail() {
   const [coCost, setCOCost] = useState('');
   const [newNote, setNewNote] = useState('');
   const [showAssign, setShowAssign] = useState(null);
+  const [assigneeMap, setAssigneeMap] = useState({});
   const [showReassign, setShowReassign] = useState(null);
   const [showSchedule, setShowSchedule] = useState(false);
   const [schedForm, setSchedForm] = useState({ user_id: '', date: '', start_time: '', end_time: '', description: '' });
@@ -71,6 +72,23 @@ export default function ProjectDetail() {
   }
   async function assignTask(taskId, userId) {
     try { await api('/projects/tasks/' + taskId + '/assign', { method: 'PATCH', body: JSON.stringify({ user_id: userId }) }); setShowAssign(null); load(); } catch (e) { alert(e.message); }
+  }
+  async function toggleAssignee(taskId, userId) {
+    try {
+      const current = assigneeMap[taskId] || [];
+      const isAssigned = current.some(a => a.id === userId || a.user_id === userId);
+      let result;
+      if (isAssigned) {
+        result = await api('/task-assignees/' + taskId + '/' + userId, { method: 'DELETE' });
+      } else {
+        result = await api('/task-assignees/' + taskId + '/add', { method: 'POST', body: JSON.stringify({ user_id: userId }) });
+      }
+      setAssigneeMap(p => ({ ...p, [taskId]: result }));
+      load();
+    } catch (e) { alert(e.message); }
+  }
+  async function loadAssignees(taskId) {
+    try { const a = await api('/task-assignees/' + taskId); setAssigneeMap(p => ({ ...p, [taskId]: a })); } catch { }
   }
   async function reassignCompletion(taskId, userId) {
     try { await api('/projects/tasks/' + taskId + '/reassign-completion', { method: 'PATCH', body: JSON.stringify({ user_id: userId }) }); setShowReassign(null); load(); } catch (e) { alert(e.message); }
@@ -202,12 +220,12 @@ export default function ProjectDetail() {
                 <button onClick={() => toggleTask(task.id)} disabled={toggling === task.id} className={cn('w-full text-left flex items-center gap-3 px-4 py-2.5', task.done ? 'text-zinc-600 line-through' : 'text-zinc-200')}>
                   <div className={cn('w-5 h-5 rounded-md border flex-shrink-0 flex items-center justify-center', task.done ? 'bg-emerald-600 border-emerald-600' : 'border-zinc-600')}>{task.done && <Check className="w-3 h-3 text-white" />}</div>
                   <span className="flex-1">{task.text}</span>
-                  {task.assignee_name && <button onClick={e => { e.stopPropagation(); if (isAdmin()) assignTask(task.id, null); }} title={isAdmin() ? "Click to unassign" : task.assignee_name} className={isAdmin() ? "hover:opacity-60" : ""}><Avatar name={task.assignee_name} color={task.assignee_color} size="sm" /></button>}
+                  {task.assignee_name && <div onClick={e => e.stopPropagation()} className="flex -space-x-1.5">{(() => { const extras = (assigneeMap[task.id] || []).filter(a => a.name !== task.assignee_name); return [<Avatar key="primary" name={task.assignee_name} color={task.assignee_color} size="sm" />, ...extras.map(a => <Avatar key={a.id || a.user_id} name={a.name} color={a.color} size="sm" />)]; })()}</div>}
                   {task.due_date && <span className="text-xs text-zinc-600">{fmtDate(task.due_date)}</span>}
                 </button>
                 <div className="px-4 pb-2 flex items-center gap-3 flex-wrap">
                   {task.done && task.completed_by_name && <span className="text-[11px] text-zinc-600">Completed by {task.completed_by_name}{task.completed_at && ' · ' + new Date(task.completed_at).toLocaleString()}{isAdmin() && <button onClick={() => setShowReassign(task)} className="ml-1 text-brand-400 hover:underline">change</button>}</span>}
-                  {isAdmin() && !task.done && <button onClick={() => setShowAssign(task)} className="text-[11px] text-zinc-600 hover:text-brand-400">{task.assignee_name ? 'Reassign' : 'Assign'}</button>}
+                  {isAdmin() && !task.done && <button onClick={() => { setShowAssign(task); loadAssignees(task.id); }} className="text-[11px] text-zinc-600 hover:text-brand-400">{task.assignee_name ? 'Edit Team' : 'Assign'}</button>}
                   <button onClick={() => { setShowPhotoUpload(task.id); loadTaskPhotos(task.id); }} className="text-[11px] text-zinc-600 hover:text-brand-400 flex items-center gap-1"><Camera className="w-3 h-3" /> Photo</button>
                   {taskPhotos[task.id]?.length > 0 && <span className="text-[11px] text-emerald-500 flex items-center gap-1"><Image className="w-3 h-3" /> {taskPhotos[task.id].length}</span>}
                 </div>
@@ -325,7 +343,21 @@ export default function ProjectDetail() {
       <Modal open={showStatus} onClose={() => setShowStatus(false)} title="Change Status"><div className="space-y-2">{['not-started','in-progress','completed'].map(s => <button key={s} onClick={() => changeStatus(s)} className={cn('w-full text-left px-4 py-3 rounded-lg text-sm capitalize', project.status === s ? 'bg-brand-400/10 border-2 border-brand-400 text-brand-400' : 'bg-zinc-800/50 border border-zinc-700/50 text-zinc-300')}>{s}</button>)}</div></Modal>
       <Modal open={showAddArea} onClose={() => setShowAddArea(false)} title="Add Area"><div className="space-y-3"><Input label="Area Name" placeholder="e.g. Outdoor Patio" /><Input label="Task 1" /><Input label="Task 2" /><Button onClick={() => setShowAddArea(false)}>Add Area</Button></div></Modal>
       <Modal open={showCO} onClose={() => setShowCO(false)} title="Submit Change Order"><div className="space-y-3"><Textarea label="Description *" rows={3} value={coText} onChange={e => setCOText(e.target.value)} /><Input label="Cost ($)" type="number" value={coCost} onChange={e => setCOCost(e.target.value)} /><Button onClick={submitCO}>Submit</Button></div></Modal>
-      <Modal open={!!showAssign} onClose={() => setShowAssign(null)} title="Assign Task">{showAssign && <div className="space-y-2"><p className="text-sm text-zinc-400 mb-1">{showAssign.text}</p><p className="text-[10px] text-zinc-600 mb-3">Tap techs to assign. Tap again to unassign. Close when done.</p>{showAssign.assignee_name && <button onClick={async () => { await assignTask(showAssign.id, null); const updated = { ...showAssign, assignee_name: null, assignee_color: null }; setShowAssign(updated); }} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-red-400 hover:bg-red-400/10 text-left border border-red-400/20 mb-2"><Trash2 className="w-4 h-4" /> Unassign {showAssign.assignee_name}</button>}{(users || []).map(u => { const isAssigned = showAssign.assignee_name === u.name; return <button key={u.id} onClick={async () => { await assignTask(showAssign.id, u.id); const updated = { ...showAssign, assignee_name: u.name, assignee_color: u.color }; setShowAssign(updated); }} className={cn("w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-left transition-colors", isAssigned ? "bg-brand-400/10 border border-brand-400/30 text-brand-400" : "text-zinc-200 hover:bg-zinc-800/50")}><Avatar name={u.name} color={u.color} size="sm" />{u.name}{isAssigned && <Check className="w-4 h-4 ml-auto" />}</button>; })}</div>}</Modal>
+      <Modal open={!!showAssign} onClose={() => setShowAssign(null)} title="Assign Task">{showAssign && <div className="space-y-2">
+        <p className="text-sm text-zinc-300 mb-1">{showAssign.text}</p>
+        <p className="text-[10px] text-zinc-600 mb-3">Toggle techs on/off. Multiple techs can be assigned. Close when done.</p>
+        {(users || []).map(u => {
+          const currentAssignees = assigneeMap[showAssign.id] || [];
+          const isAssigned = currentAssignees.some(a => (a.id === u.id) || (a.user_id === u.id));
+          return <button key={u.id} onClick={() => toggleAssignee(showAssign.id, u.id)}
+            className={cn("w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-left transition-all", isAssigned ? "bg-brand-400/10 border border-brand-400/30 text-brand-400" : "text-zinc-200 hover:bg-zinc-800/50 border border-transparent")}>
+            <Avatar name={u.name} color={u.color} size="sm" />
+            <span className="flex-1">{u.name}</span>
+            {isAssigned && <Check className="w-4 h-4" />}
+          </button>;
+        })}
+        {(assigneeMap[showAssign.id] || []).length > 0 && <p className="text-[10px] text-zinc-500 pt-1">{(assigneeMap[showAssign.id] || []).length} tech{(assigneeMap[showAssign.id] || []).length !== 1 ? 's' : ''} assigned</p>}
+      </div>}</Modal>
       <Modal open={!!showReassign} onClose={() => setShowReassign(null)} title="Reassign Completion">{showReassign && <div className="space-y-2"><p className="text-sm text-zinc-400 mb-3">Who completed: {showReassign.text}?</p>{(users || []).map(u => <button key={u.id} onClick={() => reassignCompletion(showReassign.id, u.id)} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-zinc-200 hover:bg-zinc-800/50 text-left"><Avatar name={u.name} color={u.color} size="sm" />{u.name}</button>)}</div>}</Modal>
 
       {/* Photo Upload Modal */}
