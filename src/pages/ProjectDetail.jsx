@@ -16,6 +16,10 @@ export default function ProjectDetail() {
   const [toggling, setToggling] = useState(null);
   const [showStatus, setShowStatus] = useState(false);
   const [showAddArea, setShowAddArea] = useState(false);
+  const [newAreaName, setNewAreaName] = useState('');
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [newTaskText, setNewTaskText] = useState('');
+  const [newTaskAreaId, setNewTaskAreaId] = useState('');
   const [showCO, setShowCO] = useState(false);
   const [coText, setCOText] = useState('');
   const [coCost, setCOCost] = useState('');
@@ -116,6 +120,14 @@ export default function ProjectDetail() {
   async function addNote() {
     if (!newNote.trim()) return;
     try { await api('/projects/' + id + '/notes', { method: 'POST', body: JSON.stringify({ text: newNote }) }); setNewNote(''); load(); } catch (e) { console.error(e); }
+  }
+  async function createArea() {
+    if (!newAreaName.trim()) return;
+    try { await api('/projects/' + id + '/areas', { method: 'POST', body: JSON.stringify({ name: newAreaName }) }); setNewAreaName(''); setShowAddArea(false); load(); } catch (e) { alert(e.message); }
+  }
+  async function addNewTask() {
+    if (!newTaskText.trim() || !newTaskAreaId) { alert('Enter task text and select an area'); return; }
+    try { await api('/projects/' + id + '/areas/' + newTaskAreaId + '/tasks', { method: 'POST', body: JSON.stringify({ text: newTaskText }) }); setNewTaskText(''); setNewTaskAreaId(''); setShowAddTask(false); load(); } catch (e) { alert(e.message); }
   }
   async function submitCO() {
     if (!coText.trim()) return;
@@ -234,7 +246,7 @@ export default function ProjectDetail() {
         return <div className="flex gap-4">
           {/* Left: Task List */}
           <div className="flex-1 min-w-0">
-            {isAdmin() && <div className="flex justify-end mb-3"><Button variant="secondary" onClick={() => setShowAddArea(true)}><Plus className="w-4 h-4" /> Add Area</Button></div>}
+            {isAdmin() && <div className="flex justify-end gap-2 mb-3"><Button onClick={() => setShowAddTask(true)}><Plus className="w-4 h-4" /> Add Task</Button><Button variant="secondary" onClick={() => setShowAddArea(true)}><Plus className="w-4 h-4" /> Add Area</Button></div>}
             {(project.areas || []).map(area => <div key={area.id} className="mb-6"><h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 px-1">{area.name}</h3><div className="space-y-1">{(area.tasks || []).map(task => (
               <div key={task.id} className={cn('rounded-xl text-sm bg-[#0a0a0c] border border-white/[0.04]', task.done && 'opacity-70')}>
                 {editingTask === task.id ? (
@@ -371,7 +383,18 @@ export default function ProjectDetail() {
 
       {/* MODALS */}
       <Modal open={showStatus} onClose={() => setShowStatus(false)} title="Change Status"><div className="space-y-2">{['not-started','in-progress','completed'].map(s => <button key={s} onClick={() => changeStatus(s)} className={cn('w-full text-left px-4 py-3 rounded-lg text-sm capitalize', project.status === s ? 'bg-brand-400/10 border-2 border-brand-400 text-brand-400' : 'bg-zinc-800/50 border border-zinc-700/50 text-zinc-300')}>{s}</button>)}</div></Modal>
-      <Modal open={showAddArea} onClose={() => setShowAddArea(false)} title="Add Area"><div className="space-y-3"><Input label="Area Name" placeholder="e.g. Outdoor Patio" /><Input label="Task 1" /><Input label="Task 2" /><Button onClick={() => setShowAddArea(false)}>Add Area</Button></div></Modal>
+      <Modal open={showAddArea} onClose={() => { setShowAddArea(false); setNewAreaName(''); }} title="Add Area"><div className="space-y-3">
+        <Input label="Area Name *" placeholder="e.g. Outdoor Patio, Master Bedroom" value={newAreaName} onChange={e => setNewAreaName(e.target.value)} />
+        <Button onClick={createArea} disabled={!newAreaName.trim()}>Create Area</Button>
+      </div></Modal>
+      <Modal open={showAddTask} onClose={() => { setShowAddTask(false); setNewTaskText(''); setNewTaskAreaId(''); }} title="Add Task"><div className="space-y-3">
+        <Input label="Task *" placeholder="What needs to be done..." value={newTaskText} onChange={e => setNewTaskText(e.target.value)} />
+        <Select label="Assign to Area *" value={newTaskAreaId} onChange={e => setNewTaskAreaId(e.target.value)}>
+          <option value="">Select area...</option>
+          {(project.areas || []).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+        </Select>
+        <Button onClick={addNewTask} disabled={!newTaskText.trim() || !newTaskAreaId}>Add Task</Button>
+      </div></Modal>
       <Modal open={showCO} onClose={() => setShowCO(false)} title="Submit Change Order"><div className="space-y-3"><Textarea label="Description *" rows={3} value={coText} onChange={e => setCOText(e.target.value)} /><Input label="Cost ($)" type="number" value={coCost} onChange={e => setCOCost(e.target.value)} /><Button onClick={submitCO}>Submit</Button></div></Modal>
       <Modal open={!!showAssign} onClose={() => setShowAssign(null)} title="Assign Task">{showAssign && <div className="space-y-2">
         <p className="text-sm text-zinc-300 mb-1">{showAssign.text}</p>
