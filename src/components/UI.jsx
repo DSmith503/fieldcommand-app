@@ -47,7 +47,7 @@ export function Button({ children, variant = 'primary', className, ...p }) {
   return <button className={cn('px-5 py-2.5 rounded-2xl text-sm transition-all duration-300 disabled:opacity-50 flex items-center gap-2', s[variant], className)} {...p}>{children}</button>;
 }
 
-export const Select = ({ label, children, className, ...p }) => <div>{label && <label className="text-xs font-medium text-zinc-400 mb-1.5 block">{label}</label>}<select className={cn('w-full bg-white/[0.025] border border-white/[0.06] rounded-2xl px-3.5 py-2.5 text-sm text-zinc-100 outline-none focus:border-brand-400/50 transition-colors', className)} {...p}>{children}</select></div>;
+export const Select = ({ label, children, className, ...p }) => <div>{label && <label className="text-xs font-medium text-zinc-400 mb-1.5 block">{label}</label>}<select className={cn('w-full bg-[#0a0a0c] border border-white/[0.06] rounded-2xl px-3.5 py-2.5 text-sm text-zinc-100 outline-none focus:border-brand-400/50 transition-colors [&>option]:bg-[#0a0a0c] [&>option]:text-zinc-100', className)} {...p}>{children}</select></div>;
 
 export const Textarea = ({ label, className, ...p }) => <div>{label && <label className="text-xs font-medium text-zinc-400 mb-1.5 block">{label}</label>}<textarea className={cn('w-full bg-white/[0.025] border border-white/[0.06] rounded-2xl px-3.5 py-2.5 text-sm text-zinc-100 outline-none focus:border-brand-400/50 placeholder-zinc-600 transition-colors resize-none', className)} {...p} /></div>;
 

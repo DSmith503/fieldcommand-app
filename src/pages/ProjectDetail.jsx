@@ -152,9 +152,31 @@ export default function ProjectDetail() {
 
       {/* NOTES */}
       {tab === 'notes' && <div>
-        <div className="flex gap-2 mb-4"><input value={newNote} onChange={e => setNewNote(e.target.value)} onKeyDown={e => e.key === 'Enter' && addNote()} placeholder="Add a note..." className="flex-1 bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-4 py-2.5 text-sm text-zinc-100 outline-none focus:border-brand-400/50 placeholder-zinc-600" /><Button onClick={addNote}><Send className="w-4 h-4" /></Button></div>
-        {(project.notes || []).map(n => <Card key={n.id} className="p-4 mb-2"><div className="flex items-center gap-2 mb-1.5"><Avatar name={n.user_name} color={n.user_color} size="sm" /><span className="text-sm font-medium">{n.user_name}</span><span className="text-[11px] text-zinc-600">{new Date(n.created_at).toLocaleString()}</span></div><p className="text-sm text-zinc-300">{n.text}</p></Card>)}
-        {!project.notes?.length && <EmptyState title="No notes yet" />}
+        <Card className="p-4 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Avatar name={me?.name} color={me?.color} size="sm" />
+            <span className="text-sm font-medium text-zinc-300">{me?.name}</span>
+          </div>
+          <textarea value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Write a note... Use • or - at the start of a line for bullet points" rows={5}
+            className="w-full bg-white/[0.025] border border-white/[0.06] rounded-xl px-4 py-3 text-sm text-zinc-100 outline-none focus:border-brand-400/50 placeholder-zinc-600 resize-y min-h-[120px] leading-relaxed" />
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex gap-1">
+              <button onClick={() => setNewNote(newNote + (newNote && !newNote.endsWith('\n') ? '\n' : '') + '• ')} className="text-[10px] px-2 py-1 rounded-lg bg-white/[0.04] text-zinc-500 hover:text-zinc-300 border border-white/[0.06]">• Bullet</button>
+              <button onClick={() => setNewNote(newNote + (newNote && !newNote.endsWith('\n') ? '\n' : '') + '— ')} className="text-[10px] px-2 py-1 rounded-lg bg-white/[0.04] text-zinc-500 hover:text-zinc-300 border border-white/[0.06]">— Dash</button>
+              <button onClick={() => { const lines = newNote.split('\n'); const numbered = lines.map((l, i) => l.trim() ? (i + 1) + '. ' + l.replace(/^\d+\.\s*/, '') : l).join('\n'); setNewNote(numbered); }} className="text-[10px] px-2 py-1 rounded-lg bg-white/[0.04] text-zinc-500 hover:text-zinc-300 border border-white/[0.06]">1. Number</button>
+            </div>
+            <Button onClick={addNote} disabled={!newNote.trim()} className="text-sm"><Send className="w-4 h-4" /> Post Note</Button>
+          </div>
+        </Card>
+        {(project.notes || []).map(n => <Card key={n.id} className="p-4 mb-2">
+          <div className="flex items-center gap-2 mb-2">
+            <Avatar name={n.user_name} color={n.user_color} size="sm" />
+            <span className="text-sm font-medium">{n.user_name}</span>
+            <span className="text-[11px] text-zinc-600">{new Date(n.created_at).toLocaleString()}</span>
+          </div>
+          <div className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">{n.text}</div>
+        </Card>)}
+        {!project.notes?.length && <EmptyState title="No notes yet" sub="Write a note above to get started" />}
       </div>}
 
       {/* FILES */}
